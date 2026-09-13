@@ -1,7 +1,7 @@
 import { DEFAULT_CONFIG } from "./config";
 import type { Processor } from "./processor";
 import { ProcessorRegistry } from "./registry";
-import type { CompressInput, CompressResult, EngineConfig } from "./types";
+import { recoverCriticalLines } from "./recovery";
 
 export class CompressionEngine {
   readonly registry = new ProcessorRegistry();
@@ -36,7 +36,8 @@ export class CompressionEngine {
       return result(working, "passthrough", bytesIn, false, false);
     }
     const processed = processor.process({ ...input, text: working });
-    return result(processed.text, processor.name, bytesIn, Boolean(processed.redacted), false);
+    const recovered = recoverCriticalLines(working, processed.text, this.config.recoverCriticalLines);
+    return result(recovered, processor.name, bytesIn, Boolean(processed.redacted), false);
   }
 }
 
