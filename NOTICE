@@ -1,0 +1,9 @@
+Clearance
+Copyright 2026 Clearance contributors
+
+This product includes processor strategies inspired by Token-Saver
+(https://github.com/ppgranger/token-saver), licensed under the Apache
+License, Version 2.0. Those strategies were reimplemented in TypeScript;
+the Token-Saver Python sources are not vendored in this repository.
+
+Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0
