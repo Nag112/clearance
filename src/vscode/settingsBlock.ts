@@ -4,7 +4,20 @@ export const END_MARKER = "// --- clearance:end ---";
 const OVERRIDE_KEYS = [
   "github.copilot.advanced.debug.overrideCapiUrl",
   "github.copilot.advanced.debug.overrideProxyUrl",
+  "github.copilot.chat.proxy.url",
+  "terminal.chat.tools.terminalProfile.",
 ];
+
+export interface SettingsWrapOptions {
+  shimDir: string;
+  nodePath: string;
+  cliPath: string;
+}
+
+export interface SettingsApplyOptions {
+  proxyUrl: string;
+  wrap?: SettingsWrapOptions;
+}
 
 export function userSettingsPath(home = process.env.HOME ?? "", app = process.env.CLEARANCE_VSCODE_APP ?? "Code"): string {
   if (process.platform === "darwin") {
@@ -18,21 +31,61 @@ export function userSettingsPath(home = process.env.HOME ?? "", app = process.en
   return `${xdg}/${app}/User/settings.json`;
 }
 
-export function buildBlock(proxyUrl: string): string {
-  return [
-    START_MARKER,
-    `    "github.copilot.advanced.debug.overrideCapiUrl": ${JSON.stringify(proxyUrl)},`,
-    `    "github.copilot.advanced.debug.overrideProxyUrl": ${JSON.stringify(proxyUrl)}`,
-    `    ${END_MARKER}`,
-  ].join("\n");
+export function chatProfileKey(platform = process.platform): string {
+  if (platform === "win32") {
+    return "terminal.chat.tools.terminalProfile.windows";
+  }
+  if (platform === "darwin") {
+    return "terminal.chat.tools.terminalProfile.osx";
+  }
+  return "terminal.chat.tools.terminalProfile.linux";
 }
 
-export function applySettingsBlock(source: string, proxyUrl: string): string {
+export function defaultShellPath(platform = process.platform, env: NodeJS.ProcessEnv = process.env): string {
+  if (platform === "win32") {
+    return env.ComSpec ?? "C:\\Windows\\System32\\cmd.exe";
+  }
+  return env.SHELL || (platform === "darwin" ? "/bin/zsh" : "/bin/bash");
+}
+
+export function buildBlock(opts: SettingsApplyOptions, platform = process.platform, env: NodeJS.ProcessEnv = process.env): string {
+  const lines = [
+    START_MARKER,
+    `    "github.copilot.advanced.debug.overrideCapiUrl": ${JSON.stringify(opts.proxyUrl)},`,
+    `    "github.copilot.advanced.debug.overrideProxyUrl": ${JSON.stringify(opts.proxyUrl)},`,
+    `    "github.copilot.chat.proxy.url": ${JSON.stringify(opts.proxyUrl)}`,
+  ];
+  if (opts.wrap) {
+    const sep = platform === "win32" ? ";" : ":";
+    const existingPath = env.PATH ?? "";
+    const profile = {
+      path: defaultShellPath(platform, env),
+      env: {
+        CLEARANCE_WRAP: "1",
+        CLEARANCE_SHIM_DIR: opts.wrap.shimDir,
+        CLEARANCE_NODE: opts.wrap.nodePath,
+        CLEARANCE_CLI: opts.wrap.cliPath,
+        PATH: `${opts.wrap.shimDir}${sep}${existingPath}`,
+      },
+    };
+    lines[lines.length - 1] += ",";
+    lines.push(`    ${JSON.stringify(chatProfileKey(platform))}: ${JSON.stringify(profile)}`);
+  }
+  lines.push(`    ${END_MARKER}`);
+  return lines.join("\n");
+}
+
+function normalizeApplyOptions(proxyUrlOrOpts: string | SettingsApplyOptions): SettingsApplyOptions {
+  return typeof proxyUrlOrOpts === "string" ? { proxyUrl: proxyUrlOrOpts } : proxyUrlOrOpts;
+}
+
+export function applySettingsBlock(source: string, proxyUrlOrOpts: string | SettingsApplyOptions): string {
+  const opts = normalizeApplyOptions(proxyUrlOrOpts);
   if (hasUnmanagedOverride(source)) {
     throw new Error("Refusing to overwrite an unmanaged Copilot endpoint override. Remove it or use Clearance: Disable first.");
   }
   const next = stripSettingsBlock(source).replace(/\s*$/, "");
-  const block = buildBlock(proxyUrl);
+  const block = buildBlock(opts);
   if (next.trim() === "" || next.trim() === "{}" || next.trim() === "{") {
     return `{\n    ${block}\n}\n`;
   }

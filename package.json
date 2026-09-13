@@ -15,6 +15,9 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "bin": {
+    "clearance": "./out/cli/main.js"
+  },
   "contributes": {
     "commands": [
       {

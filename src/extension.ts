@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { startProxy, type ClearanceProxy } from "./proxy/server";
+import { writeShimDirectory } from "./shell/shims";
 import { applySettingsBlock, stripSettingsBlock, userSettingsPath } from "./vscode/settingsBlock";
 
 let proxy: ClearanceProxy | undefined;
@@ -15,10 +16,15 @@ function formatStatus(): string {
   return proxy ? `Clearance on · saved ${kb} kB this session` : "Clearance off";
 }
 
-function writeSettings(enable: boolean): void {
+function writeSettings(
+  enable: boolean,
+  wrap?: { shimDir: string; nodePath: string; cliPath: string },
+): void {
   const target = settingsFile || userSettingsPath(os.homedir());
   const current = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : "{\n}\n";
-  const next = enable ? applySettingsBlock(current, proxy!.url) : stripSettingsBlock(current);
+  const next = enable
+    ? applySettingsBlock(current, { proxyUrl: proxy!.url, wrap })
+    : stripSettingsBlock(current);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, next, "utf8");
 }
@@ -49,8 +55,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
         },
       });
+      const shimDir = path.join(context.globalStorageUri.fsPath, "shims");
+      writeShimDirectory(shimDir);
       try {
-        writeSettings(true);
+        writeSettings(true, {
+          shimDir,
+          nodePath: process.execPath,
+          cliPath: path.join(context.extensionPath, "out", "cli", "main.js"),
+        });
       } catch (err) {
         await proxy.close();
         proxy = undefined;
