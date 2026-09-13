@@ -1,8 +1,17 @@
 import { DEFAULT_CONFIG } from "./config";
+import type { Processor } from "./processor";
+import { ProcessorRegistry } from "./registry";
 import type { CompressInput, CompressResult, EngineConfig } from "./types";
 
 export class CompressionEngine {
+  readonly registry = new ProcessorRegistry();
+
   constructor(private readonly config: EngineConfig = DEFAULT_CONFIG) {}
+
+  register(processor: Processor): this {
+    this.registry.register(processor);
+    return this;
+  }
 
   compress(input: CompressInput): CompressResult {
     const original = input.text;
@@ -12,14 +21,18 @@ export class CompressionEngine {
       return result(original, "passthrough", bytesIn, false, true);
     }
 
-    let text = original;
+    let working = original;
     if (bytesIn > this.config.maxOutputBytes) {
       const sliced = original.slice(0, this.config.maxOutputBytes);
-      text = `${sliced}\n[clearance] truncated: ${bytesIn} bytes exceeded maxOutputBytes ${this.config.maxOutputBytes}\n`;
-      return result(text, "size-cap", bytesIn, false, false);
+      working = `${sliced}\n[clearance] truncated: ${bytesIn} bytes exceeded maxOutputBytes ${this.config.maxOutputBytes}\n`;
     }
 
-    return result(text, "passthrough", bytesIn, false, false);
+    const processor = this.registry.match({ ...input, text: working });
+    if (!processor) {
+      return result(working, "passthrough", bytesIn, false, false);
+    }
+    const processed = processor.process({ ...input, text: working });
+    return result(processed.text, processor.name, bytesIn, Boolean(processed.redacted), false);
   }
 }
 
