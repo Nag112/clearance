@@ -2,13 +2,14 @@ import { CompressionEngine } from "./engine";
 import { envProcessor } from "./processors/env";
 import { genericProcessor } from "./processors/generic";
 import { gitProcessor } from "./processors/git";
+import { testProcessor } from "./processors/test";
 
 export function createDefaultEngine(): CompressionEngine {
-  return new CompressionEngine().register(gitProcessor).register(envProcessor).register(genericProcessor);
-}
-
-export function createDefaultEngine(): CompressionEngine {
-  return new CompressionEngine().register(envProcessor).register(genericProcessor);
+  return new CompressionEngine()
+    .register(gitProcessor)
+    .register(testProcessor)
+    .register(envProcessor)
+    .register(genericProcessor);
 }
 
 export { CompressionEngine } from "./engine";
