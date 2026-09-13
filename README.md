@@ -25,8 +25,12 @@ Enable writes a marked block into VS Code user `settings.json`:
 
 - `github.copilot.advanced.debug.overrideCapiUrl`
 - `github.copilot.advanced.debug.overrideProxyUrl`
+- `github.copilot.chat.proxy.url` (second hook if the debug URL keys go away)
+- `terminal.chat.tools.terminalProfile` for this OS
 
-pointing at `http://127.0.0.1:<port>`. That is the same unofficial Copilot debug surface [Headroom](https://headroom-docs.vercel.app/docs/vscode-copilot) uses. If GitHub removes those settings, Disable still unwraps the block; chat will no longer route through Clearance.
+pointing at `http://127.0.0.1:<port>`. That is the same unofficial Copilot debug surface [Headroom](https://headroom-docs.vercel.app/docs/vscode-copilot) uses. If GitHub removes those settings, Disable still unwraps the block.
+
+The chat terminal profile prepends PATH **shims** for common CLIs (`git`, `pytest`, `npm`, `docker`, …). Those shims run `clearance exec`, which compresses captured stdout/stderr with the same engine and keeps the child’s exit code. They only wrap when `CLEARANCE_WRAP=1` (set on that chat profile, not your everyday terminal). Interactive programs (`vim`, `ssh`, `less`, `git commit` without `-m`, …) are passed through. Copilot’s `runInTerminal` uses a PTY, so wrapping is not skipped just because stdout is a tty.
 
 The proxy binds **loopback only**, forwards the incoming `Authorization` header and model id, and **fails closed** (HTTP 502) if the Copilot API is unreachable. It does not silently bypass compression.
 
@@ -61,5 +65,7 @@ npm test
 
 - `src/engine/` — CompressionEngine, gates, processors
 - `src/proxy/` — loopback HTTP proxy
+- `src/cli/` — `clearance exec` wrapper
+- `src/shell/` — PATH shim generator
 - `src/vscode/settingsBlock.ts` — marked settings writer
 - `src/extension.ts` — Enable / Disable / status bar
