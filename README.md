@@ -42,6 +42,15 @@ Tiny outputs are skipped. Huge outputs are capped with a marker. The first match
 
 `cat` of source files is unchanged. `.env` / `.env.example` / `.env.template` are unchanged; other `.env.*` values are redacted.
 
+## Request logs
+
+Every non-health proxy request is appended to gitignored `.clearance/` in the workspace:
+
+- `requests.jsonl` — one JSON object per request: full incoming body, compressed outgoing body, each tool's raw `input` / compressed `output`, processor name, byte counts, and ratio
+- `summary.json` — running totals (`savedBytes`, `ratio`, per-processor breakdown) for efficiency checks
+
+Authorization headers are never written. Set `CLEARANCE_LOG=0` to disable, or `CLEARANCE_LOG_DIR` to pick another directory.
+
 ## Tests
 
 ```bash

@@ -38,8 +38,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return;
       }
       savedBytes = 0;
+      const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       proxy = await startProxy({
         host: "127.0.0.1",
+        logDir: workspace ? `${workspace}/.clearance` : undefined,
         onSavings: (n) => {
           savedBytes += n;
           if (status) {
@@ -60,7 +62,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         status.text = formatStatus();
         status.command = "clearance.disable";
       }
-      vscode.window.showInformationMessage(`Clearance enabled on ${proxy.url}`);
+      vscode.window.showInformationMessage(
+        `Clearance enabled on ${proxy.url}. Request logs: ${workspace ? `${workspace}/.clearance` : ".clearance"}`,
+      );
     }),
     vscode.commands.registerCommand("clearance.disable", async () => {
       if (proxy) {
