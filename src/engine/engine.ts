@@ -27,7 +27,11 @@ export class CompressionEngine {
       working = `${sliced}\n[clearance] truncated: ${bytesIn} bytes exceeded maxOutputBytes ${this.config.maxOutputBytes}\n`;
     }
 
-    const processor = this.registry.match({ ...input, text: working });
+    const failed = (input.exitCode ?? 0) !== 0;
+    let processor = this.registry.match({ ...input, text: working });
+    if (processor && failed && !processor.handlesFailure) {
+      processor = this.registry.findByName("generic") ?? processor;
+    }
     if (!processor) {
       return result(working, "passthrough", bytesIn, false, false);
     }
