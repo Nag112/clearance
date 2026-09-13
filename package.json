@@ -1,0 +1,42 @@
+{
+  "name": "clearance",
+  "displayName": "Clearance",
+  "description": "Deterministic Copilot Chat tool-output compressor",
+  "version": "0.1.0",
+  "publisher": "clearance",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "clearance.enable",
+        "title": "Clearance: Enable"
+      },
+      {
+        "command": "clearance.disable",
+        "title": "Clearance: Disable"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "test": "tsx --test test/**/*.test.ts",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.90.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
