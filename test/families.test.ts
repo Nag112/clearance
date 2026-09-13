@@ -173,7 +173,8 @@ describe("remaining processor families", () => {
     assert.match(out.text, /workflow failed/);
   });
   it("structured_log keeps error level", () => {
-    const text = '{"level":"info","msg":"n"}\n{"level":"error","msg":"boom"}\n';
+    const info = Array.from({ length: 20 }, () => '{"level":"info","msg":"n"}').join("\n");
+    const text = `${info}\n{"level":"error","msg":"boom"}\n`;
     const out = withProcessor(structuredLogProcessor).compress({ command: "cat app.log", text });
     assert.match(out.text, /boom/);
     assert.doesNotMatch(out.text, /"info"/);

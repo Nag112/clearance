@@ -2,6 +2,7 @@ import { DEFAULT_CONFIG } from "./config";
 import type { Processor } from "./processor";
 import { ProcessorRegistry } from "./registry";
 import { recoverCriticalLines } from "./recovery";
+import type { CompressInput, CompressResult, EngineConfig } from "./types";
 
 export class CompressionEngine {
   readonly registry = new ProcessorRegistry();
