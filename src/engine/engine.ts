@@ -36,8 +36,14 @@ export class CompressionEngine {
       return result(working, "passthrough", bytesIn, false, false);
     }
     const processed = processor.process({ ...input, text: working });
-    const recovered = recoverCriticalLines(working, processed.text, this.config.recoverCriticalLines);
-    return result(recovered, processor.name, bytesIn, Boolean(processed.redacted), false);
+    let recovered = recoverCriticalLines(working, processed.text, this.config.recoverCriticalLines);
+    const redacted = Boolean(processed.redacted);
+    const saved = byteLength(working) - byteLength(recovered);
+    const ratio = byteLength(working) === 0 ? 0 : saved / byteLength(working);
+    if (!redacted && ratio < this.config.minCompressionRatio) {
+      recovered = working;
+    }
+    return result(recovered, processor.name, bytesIn, redacted, false);
   }
 }
 
